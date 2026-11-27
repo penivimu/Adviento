@@ -20,13 +20,13 @@ window.ADV = {
   // Primer día del calendario (día 1). Mes: 1 = enero ... 12 = diciembre.
   start: { year: 2026, month: 12, day: 1 },
 
-  titulo: 'TODO: título',
+  titulo: 'ein little surprise',
 
   // Pantalla de bienvenida (solo se ve la primera vez que entra).
   intro: {
-    titulo: 'TODO: frase de entrada',
+    titulo: 'For Emilia ⭒',
     texto: '',
-    boton: 'Entrar'
+    boton: 'Enter'
   },
 
   days: {
