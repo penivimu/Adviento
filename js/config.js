@@ -34,7 +34,7 @@ window.ADV = {
       type: 'message',
       mode: 'lines',
       title: '',
-      text: ['Hallo Emilia⭒👃 \n I stole your idea jajaj…i have been preparing this because i wanted to give you something but ist ein bisschen difficile do that.. I guess this is the only way. Dont expect too much it was dificult im not too creative jajajj ']
+      text: ['Hallo Emilia⭒👃  I stole your idea jajaj…i have been preparing this because i wanted to give you something but ist ein bisschen difficile do that.. I guess this is the only way. Dont expect too much it was dificult im not too creative jajajj ']
     },
 
     2: {
@@ -64,16 +64,16 @@ window.ADV = {
     5: {
       type: 'ragebait',
       variant: 'video',
-      carga: 6,      // segundos hasta llegar al 99 %
-      espera: 4,     // segundos parado en 99 % antes de la frase final
-      final: 'TODO: frase final'
+      carga: 3,      // segundos hasta llegar al 99 %
+      espera: 0.5,     // segundos parado en 99 % antes de la frase final
+      final: 'fanculo today nothing 👍'
     },
 
     6: {
       type: 'video',
       file: 'media/video/06.mp4',
-      poster: '',
-      note: ''
+      poster: 'poster',
+      note: 'note'
     },
 
     7: {
