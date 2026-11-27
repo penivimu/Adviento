@@ -43,9 +43,9 @@ window.ADV = {
       title: 'Dai che fai',
       answer: ['Dai che fai'],
       artist: 'Bresh',
-      cover: 'media/img/02.jpg',
-      start: 184.6,
-      duration: 3
+      cover: 'media/img/02.jpeg',
+      start: 185,
+      duration: 2.5
     },
 
     3: {
