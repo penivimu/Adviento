@@ -107,17 +107,17 @@
     let target, label;
     if (t < 1) {
       target = startDate;
-      label = 'Starts in ';
+      label = 'Empieza en ';
     } else {
       const n = new Date();
       target = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1);
-      label = 'Next in ';
+      label = 'Siguiente casilla en ';
     }
     const s = Math.max(0, Math.floor((target - new Date()) / 1000));
     const d = Math.floor(s / 86400);
     const h = Math.floor((s % 86400) / 3600);
     const m = Math.floor((s % 3600) / 60);
-    out.textContent = label + (d > 0 ? d + (d === 1 ? ' day y ' : ' days y ') : '') +
+    out.textContent = label + (d > 0 ? d + (d === 1 ? ' día y ' : ' días y ') : '') +
       pad(h) + ':' + pad(m) + ':' + pad(s % 60);
   }
 
@@ -126,6 +126,7 @@
   const body = $('#viewerBody');
   let timers = [];
   let cleanups = [];
+  let activeLightboxClose = null;
   const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
   const stopTimers = () => { timers.forEach(clearTimeout); timers = []; };
   const onClose = (fn) => cleanups.push(fn);
@@ -164,7 +165,11 @@
     if (history.state && history.state.day) history.back(); else closeView();
   });
   window.addEventListener('popstate', closeView);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeView(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (activeLightboxClose) { activeLightboxClose(); return; }
+    closeView();
+  });
 
   /* ---------- Piezas reutilizables ---------- */
   function player(parent, d, label) {
@@ -176,7 +181,7 @@
     a.preload = 'metadata';
     a.src = d.file;
 
-    const btn = el('button', 'btn', label || 'Replay');
+    const btn = el('button', 'btn', label || 'Reproducir');
     btn.type = 'button';
     const bar = el('input', 'seek');
     bar.type = 'range'; bar.min = 0; bar.max = 1000; bar.value = 0;
@@ -189,15 +194,15 @@
       time.textContent = fmt(a.currentTime) + ' / ' + fmt(a.duration);
     };
     btn.onclick = () => {
-      if (a.paused) a.play().catch(() => { err.textContent = 'Cannot replay ' + d.file; });
+      if (a.paused) a.play().catch(() => { err.textContent = 'No se puede reproducir ' + d.file; });
       else a.pause();
     };
-    a.onplay = () => { btn.textContent = 'Pause'; };
-    a.onpause = () => { btn.textContent = label || 'Replay'; };
-    a.onended = () => { btn.textContent = label || 'Replay'; bar.value = 0; };
+    a.onplay = () => { btn.textContent = 'Pausar'; };
+    a.onpause = () => { btn.textContent = label || 'Reproducir'; };
+    a.onended = () => { btn.textContent = label || 'Reproducir'; bar.value = 0; };
     a.ontimeupdate = update;
     a.onloadedmetadata = update;
-    a.onerror = () => { err.textContent = 'Document not found ' + d.file; };
+    a.onerror = () => { err.textContent = 'Falta el archivo ' + d.file; };
     bar.oninput = () => { if (a.duration) a.currentTime = (bar.value / 1000) * a.duration; };
     onClose(() => { a.pause(); a.removeAttribute('src'); a.load(); });
 
@@ -215,7 +220,7 @@
     input.spellcheck = false;
     input.setAttribute('enterkeyhint', 'done');
     if (d.placeholder) input.placeholder = d.placeholder;
-    const btn = el('button', 'btn', 'Check');
+    const btn = el('button', 'btn', 'Comprobar');
     btn.type = 'button';
     const msg = el('p', 'feedback');
     const hint = el('p', 'sub');
@@ -236,7 +241,7 @@
         return;
       }
       fails++;
-      msg.textContent = d.wrong || 'Incorrect';
+      msg.textContent = d.wrong || 'Esa no.';
       input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');
       if (d.hint && fails >= (d.hintAfter || 2)) hint.textContent = d.hint;
     };
@@ -283,87 +288,200 @@
     b.addEventListener('click', skip, { once: true });
   };
 
-  R.song = (b, d) => player(b, d, 'Replay');
+  R.song = (b, d) => {
+    const quiz = el('section', 'song-quiz');
+    const card = el('div', 'song-quiz__card');
+    const play = el('button', 'song-quiz__play');
+    play.type = 'button';
+    play.setAttribute('aria-label', 'Escuchar fragmento');
+    play.innerHTML = '<span aria-hidden="true">▶</span>';
 
-  R.voice = (b, d) => player(b, d, 'Listen');
+    const prompt = el('p', 'song-quiz__prompt', d.prompt || '¿Qué canción es?');
+    const input = el('input', 'field song-quiz__input');
+    input.type = 'text';
+    input.autocomplete = 'off';
+    input.autocapitalize = 'none';
+    input.spellcheck = false;
+    input.placeholder = d.placeholder || 'Escribe el título de la canción';
+    input.setAttribute('aria-label', 'Título de la canción');
+
+    const check = el('button', 'btn song-quiz__check', 'Comprobar');
+    check.type = 'button';
+    const feedback = el('p', 'feedback song-quiz__feedback');
+    card.append(play, prompt, input, check, feedback);
+    quiz.appendChild(card);
+    b.appendChild(quiz);
+
+    const preview = new Audio();
+    preview.preload = 'auto';
+    preview.src = d.file;
+    const startAt = Math.max(0, Number(d.start) || 0);
+    const clipLength = Math.max(0.1, Number(d.duration) || 1);
+    let previewStopTimer = null;
+    let unlocked = false;
+
+    const stopPreview = () => {
+      if (previewStopTimer) {
+        clearTimeout(previewStopTimer);
+        previewStopTimer = null;
+      }
+      preview.pause();
+    };
+
+    play.addEventListener('click', () => {
+      if (unlocked) return;
+      stopPreview();
+      const begin = () => {
+        preview.currentTime = startAt;
+        const result = preview.play();
+        if (result && typeof result.catch === 'function') {
+          result.catch(() => { feedback.textContent = 'No se ha podido reproducir el fragmento.'; });
+        }
+        previewStopTimer = setTimeout(() => {
+          preview.pause();
+          previewStopTimer = null;
+          play.classList.remove('is-playing');
+        }, clipLength * 1000);
+        play.classList.add('is-playing');
+      };
+      if (preview.readyState >= 1) begin();
+      else preview.addEventListener('loadedmetadata', begin, { once: true });
+    });
+
+    preview.addEventListener('pause', () => play.classList.remove('is-playing'));
+    preview.addEventListener('ended', () => play.classList.remove('is-playing'));
+
+    const accepted = (d.answer || [d.title || '']).map(norm).filter(Boolean);
+    const reveal = () => {
+      unlocked = true;
+      stopPreview();
+      preview.pause();
+      input.disabled = true;
+      check.disabled = true;
+      card.classList.add('is-solved');
+      quiz.classList.add('is-solved');
+      feedback.textContent = d.success || '¡Correcto!';
+      feedback.classList.add('good');
+
+      const cover = el('figure', 'song-quiz__cover');
+      const image = new Image();
+      image.alt = d.title ? 'Portada de ' + d.title : 'Portada de la canción';
+      image.src = d.cover || '';
+      image.onerror = () => {
+        image.remove();
+        cover.appendChild(el('p', 'dev', 'Añade la portada en la propiedad cover.'));
+      };
+      cover.appendChild(image);
+      if (d.title) cover.appendChild(el('figcaption', '', d.title));
+      if (d.artist) cover.appendChild(el('p', 'sub', d.artist));
+      quiz.appendChild(cover);
+
+      const fullPlayer = el('div', 'song-quiz__full-player');
+      quiz.appendChild(fullPlayer);
+      player(fullPlayer, d, 'Reproducir');
+      card.remove();
+    };
+
+    const validate = () => {
+      if (unlocked) return;
+      const value = norm(input.value);
+      if (!value) return;
+      if (accepted.includes(value)) {
+        reveal();
+      } else {
+        feedback.textContent = d.wrong || 'No es esa. ¡Prueba otra vez!';
+        input.classList.remove('shake');
+        void input.offsetWidth;
+        input.classList.add('shake');
+      }
+    };
+
+    check.addEventListener('click', validate);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') validate();
+    });
+
+    onClose(() => {
+      stopPreview();
+      preview.removeAttribute('src');
+      preview.load();
+    });
+  };
+
+  R.voice = (b, d) => player(b, d, 'Escuchar');
 
   R.photo = (b, d) => {
     const fig = el('figure', 'photo');
+    const trigger = el('button', 'photo-trigger');
+    trigger.type = 'button';
+    trigger.setAttribute('aria-label', 'Ampliar imagen');
+
     const img = new Image();
-    img.alt = d.alt || '';
-    img.tabIndex = 0;
-    img.setAttribute('role', 'button');
-    img.setAttribute('aria-label', 'Ampliar imagen');
+    img.alt = d.alt || d.caption || 'Imagen del calendario';
     img.onload = () => fig.classList.add('in');
-    img.onerror = () => fig.appendChild(el('p', 'dev', 'Not found ' + d.file));
+    img.onerror = () => fig.appendChild(el('p', 'dev', 'Falta ' + d.file));
     img.src = d.file;
+    trigger.appendChild(img);
+    fig.appendChild(trigger);
 
-    let modal = null;
+    const lightbox = el('div', 'photo-lightbox');
+    lightbox.setAttribute('role', 'dialog');
+    lightbox.setAttribute('aria-modal', 'true');
+    lightbox.setAttribute('aria-label', 'Imagen ampliada');
 
-    const closeModal = () => {
-      if (!modal) return;
-      modal.remove();
-      modal = null;
-      document.removeEventListener('keydown', modalKeydown, true);
-      img.focus();
+    const panel = el('div', 'photo-lightbox__panel');
+    const close = el('button', 'photo-lightbox__close', 'Cerrar');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Cerrar imagen ampliada');
+
+    const largeImg = new Image();
+    largeImg.className = 'photo-lightbox__image';
+    largeImg.alt = img.alt;
+
+    const actions = el('div', 'photo-lightbox__actions');
+    const download = el('a', 'photo-lightbox__download', 'Descargar ' + (/\.gif(?:$|[?#])/i.test(d.file) ? 'GIF' : 'imagen'));
+    download.href = d.file;
+    download.setAttribute('download', (d.file.split('/').pop() || 'imagen').split(/[?#]/)[0]);
+
+    const closeLightbox = () => {
+      lightbox.classList.remove('open');
+      if (activeLightboxClose === closeLightbox) activeLightboxClose = null;
+      document.removeEventListener('keydown', onLightboxKeydown, true);
+      setTimeout(() => lightbox.remove(), 220);
     };
-
-    const modalKeydown = (e) => {
-      if (e.key === 'Escape' && modal) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        closeModal();
+    const onLightboxKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        closeLightbox();
       }
     };
 
-    const openModal = () => {
-      if (modal) return;
-
-      modal = el('div', 'photo-modal');
-      modal.setAttribute('role', 'dialog');
-      modal.setAttribute('aria-modal', 'true');
-      modal.setAttribute('aria-label', 'Imagen ampliada');
-
-      const large = new Image();
-      large.className = 'photo-modal__image';
-      large.src = d.file;
-      large.alt = d.alt || 'Imagen ampliada';
-
-      const close = el('button', 'photo-modal__close', '×');
-      close.type = 'button';
-      close.setAttribute('aria-label', 'Cerrar imagen');
-      close.addEventListener('click', closeModal);
-
-      const actions = el('div', 'photo-modal__actions');
-      const download = el('a', 'photo-modal__download', 'Descargar ' + (/\.gif(?:$|[?#])/i.test(d.file) ? 'GIF' : 'imagen'));
-      download.href = d.file;
-      download.setAttribute('download', (d.file.split('/').pop() || 'imagen').split('?')[0].split('#')[0]);
-
-      actions.appendChild(download);
-      modal.append(large, close, actions);
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-      });
-
-      document.body.appendChild(modal);
-      document.addEventListener('keydown', modalKeydown, true);
-      requestAnimationFrame(() => {
-        if (modal) modal.classList.add('show');
-      });
-      close.focus();
-    };
-
-    img.addEventListener('click', openModal);
-    img.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openModal();
-      }
+    close.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
     });
-    onClose(closeModal);
+    document.addEventListener('keydown', onLightboxKeydown, true);
 
-    fig.appendChild(img);
+    actions.appendChild(download);
+    panel.append(close, largeImg, actions);
+    lightbox.appendChild(panel);
+
+    trigger.addEventListener('click', () => {
+      largeImg.src = img.currentSrc || img.src;
+      document.body.appendChild(lightbox);
+      requestAnimationFrame(() => lightbox.classList.add('open'));
+      activeLightboxClose = closeLightbox;
+      close.focus();
+    });
+
+    onClose(() => {
+      if (activeLightboxClose === closeLightbox) activeLightboxClose = null;
+      document.removeEventListener('keydown', onLightboxKeydown, true);
+      lightbox.remove();
+    });
+
     if (d.caption) fig.appendChild(el('figcaption', '', d.caption));
+    fig.appendChild(el('p', 'photo-hint', 'Pulsa la imagen para ampliarla'));
     b.appendChild(fig);
   };
 
@@ -378,7 +496,7 @@
     if (d.poster) v.poster = d.poster;
     v.src = d.file;
     const err = el('p', 'dev');
-    v.onerror = () => { err.textContent = 'Document not found ' + d.file; };
+    v.onerror = () => { err.textContent = 'Falta el archivo ' + d.file; };
     onClose(() => { v.pause(); v.removeAttribute('src'); v.load(); });
     w.append(v, err);
     if (d.note) w.appendChild(el('p', 'note', d.note));
@@ -407,7 +525,7 @@
     const reveal = () => { img.style.transform = 'scale(1)'; };
     answerBox(w, d, reveal);
     if (d.rendirse !== false) {
-      const give = el('button', 'link', 'Show');
+      const give = el('button', 'link', 'Enseñármela entera');
       give.type = 'button';
       give.onclick = () => { reveal(); give.remove(); };
       w.appendChild(give);
@@ -437,7 +555,7 @@
     if (v === 'song') {
       if (d.title) w.appendChild(el('h2', 'title', d.title));
       if (d.artist) w.appendChild(el('p', 'sub', d.artist));
-      const btn = el('button', 'btn', 'Replay');
+      const btn = el('button', 'btn', 'Reproducir');
       btn.type = 'button';
       const bar = el('div', 'bar');
       const fill = el('span');
@@ -448,7 +566,7 @@
       btn.onclick = () => {
         if (started) return;
         started = true;
-        btn.textContent = 'Pause';
+        btn.textContent = 'Pausar';
         run((p) => { fill.style.width = p + '%'; });
       };
       return;
@@ -459,15 +577,15 @@
     w.appendChild(stage);
     if (v === 'photo') {
       stage.appendChild(status);
-      run((p) => { status.textContent = 'Loading.. ' + p + '%'; });
+      run((p) => { status.textContent = 'Cargando… ' + p + '%'; });
     } else {
-      const btn = el('button', 'btn', 'Replay');
+      const btn = el('button', 'btn', 'Reproducir');
       btn.type = 'button';
       stage.appendChild(btn);
       btn.onclick = () => {
         btn.remove();
         stage.appendChild(status);
-        run((p) => { status.textContent = 'Loading.. ' + p + '%'; });
+        run((p) => { status.textContent = 'Cargando… ' + p + '%'; });
       };
     }
   };
@@ -475,7 +593,7 @@
   /* Pendientes: mapa, minijuegos, interactivos (se programan después). */
   R.pending = (b, d) => {
     const w = el('div', 'center');
-    w.appendChild(el('p', 'q', 'Not yet'));
+    w.appendChild(el('p', 'q', 'Este día todavía no tiene contenido.'));
     if (d && d.nota) w.appendChild(el('p', 'dev', d.nota));
     b.appendChild(w);
   };
@@ -490,7 +608,7 @@
     $('#introTitle').textContent = C.intro.titulo || '';
     $('#introText').textContent = C.intro.texto || '';
     const btn = $('#introBtn');
-    btn.textContent = C.intro.boton || 'Enter';
+    btn.textContent = C.intro.boton || 'Entrar';
     btn.onclick = () => {
       s.classList.add('out');
       try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) { /* nada */ }

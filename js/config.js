@@ -40,9 +40,12 @@ window.ADV = {
     2: {
       type: 'song',
       file: 'media/audio/02.mp3',
-      title: 'TODO: título de la canción',
-      artist: 'TODO: artista',
-      note: ''
+      title: 'Dai che fai',
+      answer: ['Dai che fai'],
+      artist: 'Bresh',
+      cover: 'media/img/02.jpg',
+      start: 184.6,
+      duration: 3
     },
 
     3: {
@@ -76,9 +79,12 @@ window.ADV = {
     7: {
       type: 'song',
       file: 'media/audio/07.mp3',
-      title: 'TODO: título de la canción',
-      artist: 'TODO: artista',
-      note: ''
+      title: 'Adan y Eva',
+      answer: ['Adan y eva'],
+      artist: 'Paulo Londra',
+      cover: 'media/img/07.jpg',
+      start: 162,
+      duration: 2
     },
 
     8: {
@@ -98,11 +104,14 @@ window.ADV = {
     11: { type: 'pending', nota: 'Mapa con lugares especiales' },
 
     12: {
-      type: 'song',
-      file: 'media/audio/12.mp3',
-      title: 'TODO: título de la canción',
-      artist: 'TODO: artista',
-      note: ''
+    type: 'song',
+    file: 'media/audio/12.mp3',
+    title: 'Wonderwall',
+    answer: ['Wonderwall'],
+    artist: 'Oasis',
+    cover: 'media/img/12.jpg',
+    start: 148,
+    duration: 3
     },
 
     13: {
@@ -160,10 +169,14 @@ window.ADV = {
     20: { type: 'pending', nota: 'Interactivo a pensar' },
 
     21: {
-      type: 'voice',
-      file: 'media/audio/21.mp3',
-      title: '',
-      note: ''
+      type: 'song',
+      file: 'media/audio/12.mp3',
+      title: 'Ne vale la pena',
+      answer: ['Ne vale la pena'],
+      artist: '22simba',
+      cover: 'media/img/12.jpg',
+      start: 3,
+      duration: 1.5
     },
 
     22: { type: 'pending', nota: 'Por pensar' },
