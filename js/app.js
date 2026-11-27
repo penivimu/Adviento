@@ -360,26 +360,81 @@
       check.disabled = true;
       card.classList.add('is-solved');
       quiz.classList.add('is-solved');
-      feedback.textContent = d.success || '¡Correcto!';
-      feedback.classList.add('good');
 
-      const cover = el('figure', 'song-quiz__cover');
+      // La misma tarjeta se transforma en la portada: no añade altura ni obliga a deslizar.
+      const reveal = el('div', 'song-quiz__reveal');
       const image = new Image();
+      image.className = 'song-quiz__artwork';
       image.alt = d.title ? 'Portada de ' + d.title : 'Portada de la canción';
       image.src = d.cover || '';
       image.onerror = () => {
         image.remove();
-        cover.appendChild(el('p', 'dev', 'Añade la portada en la propiedad cover.'));
+        reveal.classList.add('no-artwork');
+        reveal.appendChild(el('span', 'song-quiz__artwork-fallback', '♪'));
       };
-      cover.appendChild(image);
-      if (d.title) cover.appendChild(el('figcaption', '', d.title));
-      if (d.artist) cover.appendChild(el('p', 'sub', d.artist));
-      quiz.appendChild(cover);
 
-      const fullPlayer = el('div', 'song-quiz__full-player');
-      quiz.appendChild(fullPlayer);
-      player(fullPlayer, d, 'Reproducir');
-      card.remove();
+      const shade = el('div', 'song-quiz__shade');
+      const details = el('div', 'song-quiz__details');
+      const heading = el('div', 'song-quiz__heading');
+      const trackInfo = el('div', 'song-quiz__track-info');
+      if (d.title) trackInfo.appendChild(el('h2', 'song-quiz__title', d.title));
+      if (d.artist) trackInfo.appendChild(el('p', 'song-quiz__artist', d.artist));
+
+      const audio = new Audio(d.file);
+      audio.preload = 'auto';
+      const controls = el('div', 'song-quiz__controls');
+      const toggle = el('button', 'song-quiz__toggle', 'Ⅱ');
+      toggle.type = 'button';
+      toggle.setAttribute('aria-label', 'Pausar canción');
+      const timeline = el('input', 'song-quiz__timeline');
+      timeline.type = 'range';
+      timeline.min = 0;
+      timeline.max = 1000;
+      timeline.value = 0;
+      timeline.setAttribute('aria-label', 'Progreso de la canción');
+      const clock = el('span', 'song-quiz__clock', '0:00');
+
+      const updateAudio = () => {
+        if (audio.duration) timeline.value = String((audio.currentTime / audio.duration) * 1000);
+        clock.textContent = fmt(audio.currentTime);
+      };
+      const setPlaying = (playing) => {
+        toggle.textContent = playing ? 'Ⅱ' : '▶';
+        toggle.setAttribute('aria-label', playing ? 'Pausar canción' : 'Reproducir canción');
+      };
+      toggle.addEventListener('click', () => {
+        if (audio.paused) audio.play().catch(() => {});
+        else audio.pause();
+      });
+      audio.addEventListener('play', () => setPlaying(true));
+      audio.addEventListener('pause', () => setPlaying(false));
+      audio.addEventListener('ended', () => { setPlaying(false); timeline.value = '0'; });
+      audio.addEventListener('timeupdate', updateAudio);
+      audio.addEventListener('loadedmetadata', updateAudio);
+      timeline.addEventListener('input', () => {
+        if (audio.duration) audio.currentTime = (Number(timeline.value) / 1000) * audio.duration;
+      });
+
+      controls.append(toggle, timeline, clock);
+      heading.append(trackInfo);
+      details.append(heading, controls);
+      shade.appendChild(details);
+      reveal.append(image, shade);
+      card.replaceChildren(reveal);
+      card.classList.add('song-quiz__card--revealed');
+
+      // La validación ocurre tras una interacción del usuario, por lo que el navegador
+      // normalmente permite iniciar aquí la reproducción automáticamente.
+      audio.play().then(() => setPlaying(true)).catch(() => {
+        setPlaying(false);
+        toggle.classList.add('needs-tap');
+      });
+
+      onClose(() => {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+      });
     };
 
     const validate = () => {

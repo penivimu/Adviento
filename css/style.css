@@ -355,3 +355,165 @@ main { position: relative; z-index: 1; }
   .song-quiz__card { min-height: 15rem; gap: .8rem; }
   .song-quiz__play { width: 4rem; height: 4rem; }
 }
+/* ---------- Adivina la canción ---------- */
+.song-quiz { width: 100%; max-width: 34rem; margin: 0 auto; }
+.song-quiz__card {
+  aspect-ratio: 1 / 1;
+  min-height: 17rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(1.2rem, 5vw, 2rem);
+  background: rgba(0, 0, 0, .42);
+  border: 1px solid rgba(184, 153, 91, .3);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.025), 0 12px 36px rgba(0,0,0,.18);
+  text-align: center;
+  transition: opacity .35s, transform .35s;
+}
+.song-quiz__play {
+  width: 4.5rem;
+  height: 4.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  color: var(--gold);
+  background: rgba(0,0,0,.25);
+  font-size: 1.55rem;
+  cursor: pointer;
+  transition: background .2s, color .2s, transform .2s;
+}
+.song-quiz__play:hover,
+.song-quiz__play.is-playing {
+  color: var(--ink);
+  background: var(--gold);
+}
+.song-quiz__play:active { transform: scale(.96); }
+.song-quiz__prompt { margin: 0; color: var(--bone); }
+.song-quiz__input { max-width: 24rem; font-size: 1.1rem; }
+.song-quiz__check { margin-top: .25rem; }
+.song-quiz__feedback { min-height: 1.4em; margin: 0; }
+.song-quiz__cover {
+  width: 100%;
+  margin: 1.5rem auto 0;
+  text-align: center;
+  animation: appear .7s both;
+}
+.song-quiz__cover img {
+  display: block;
+  width: min(100%, 22rem);
+  aspect-ratio: 1;
+  object-fit: cover;
+  margin: 0 auto;
+  box-shadow: 0 12px 36px rgba(0,0,0,.28);
+}
+.song-quiz__cover figcaption { margin-top: 1rem; color: var(--bone); }
+.song-quiz__cover .sub { margin-top: .35rem; }
+.song-quiz__full-player { width: 100%; margin-top: 1.25rem; animation: appear .7s both; }
+.song-quiz__full-player .player { margin-top: 0; }
+@media (max-width: 480px) {
+  .song-quiz__card { min-height: 15rem; gap: .8rem; }
+  .song-quiz__play { width: 4rem; height: 4rem; }
+}
+
+
+/* Revelado inmersivo: la portada ocupa exactamente la tarjeta del acertijo. */
+.song-quiz__card--revealed {
+  display: block;
+  padding: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-color: rgba(213, 183, 121, .42);
+  background: #171513;
+  animation: songReveal .85s cubic-bezier(.2,.75,.25,1) both;
+}
+.song-quiz__reveal {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  isolation: isolate;
+  background: #211d19;
+}
+.song-quiz__artwork {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: songArtworkIn 1.1s ease both;
+}
+.song-quiz__shade {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(1rem, 4vw, 1.6rem);
+  background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,.12) 48%, rgba(0,0,0,.86) 100%);
+}
+.song-quiz__details { width: 100%; color: #f5efe5; text-align: left; }
+.song-quiz__heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; }
+.song-quiz__track-info { min-width: 0; }
+.song-quiz__title {
+  margin: 0;
+  color: #fffaf0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 4vw, 1.8rem);
+  line-height: 1.15;
+  font-weight: 500;
+  text-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.song-quiz__artist {
+  margin: .35rem 0 0;
+  color: rgba(255,250,240,.78);
+  font-size: .9rem;
+  letter-spacing: .04em;
+}
+.song-quiz__controls { display: flex; align-items: center; gap: .8rem; width: 100%; }
+.song-quiz__toggle {
+  flex: 0 0 2.55rem;
+  width: 2.55rem;
+  height: 2.55rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(231,211,165,.8);
+  border-radius: 50%;
+  color: #201b15;
+  background: #e2c98f;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform .2s, background .2s;
+}
+.song-quiz__toggle:hover { transform: scale(1.06); background: #f0dcae; }
+.song-quiz__toggle.needs-tap { box-shadow: 0 0 0 3px rgba(226,201,143,.18); }
+.song-quiz__timeline {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  accent-color: #e2c98f;
+  cursor: pointer;
+}
+.song-quiz__clock {
+  min-width: 2.4rem;
+  color: rgba(255,250,240,.78);
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.song-quiz__reveal.no-artwork { display: grid; place-items: center; }
+.song-quiz__artwork-fallback { color: #e2c98f; font-size: 5rem; }
+@keyframes songReveal {
+  from { opacity: .65; transform: scale(.975); filter: blur(3px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes songArtworkIn {
+  from { opacity: .25; transform: scale(1.035); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (max-width: 480px) {
+  .song-quiz__card--revealed { min-height: 0; }
+  .song-quiz__shade { padding: 1rem; }
+  .song-quiz__controls { gap: .65rem; }
+}

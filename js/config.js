@@ -34,7 +34,7 @@ window.ADV = {
       type: 'message',
       mode: 'lines',
       title: '',
-      text: ['TODO: bienvenida con tus palabras.']
+      text: ['Hallo Emilia⭒👃 \n I stole your idea jajaj…i have been preparing this because i wanted to give you something but ist ein bisschen difficile do that.. I guess this is the only way. Dont expect too much it was dificult im not too creative jajajj ']
     },
 
     2: {
