@@ -82,7 +82,7 @@ window.ADV = {
       title: 'Adan y Eva',
       answer: ['Adan y eva'],
       artist: 'Paulo Londra',
-      cover: 'media/img/07.jpg',
+      cover: 'media/img/07.jpeg',
       start: 163,
       duration: 2
     },
@@ -109,7 +109,7 @@ window.ADV = {
     title: 'Wonderwall',
     answer: ['Wonderwall'],
     artist: 'Oasis',
-    cover: 'media/img/12.jpg',
+    cover: 'media/img/12.jpeg',
     start: 148,
     duration: 1.5
     },
