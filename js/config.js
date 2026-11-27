@@ -20,12 +20,12 @@ window.ADV = {
   // Primer día del calendario (día 1). Mes: 1 = enero ... 12 = diciembre.
   start: { year: 2026, month: 12, day: 1 },
 
-  titulo: 'ein little surprise',
+  titulo: '⭒ Calendario Adviento ⭒',
 
   // Pantalla de bienvenida (solo se ve la primera vez que entra).
   intro: {
     titulo: 'For Emilia ⭒',
-    texto: '',
+    texto: '❤️👃',
     boton: 'Enter'
   },
 
@@ -52,12 +52,9 @@ window.ADV = {
     },
 
     4: {
-      type: 'riddle',
-      question: 'TODO: acertijo',
-      answer: ['respuesta'],
-      hint: 'TODO: pista (sale tras 2 fallos)',
-      success: 'TODO: frase al acertar',
-      wrong: 'Esa no.'
+      type: 'photo',
+      file: 'media/img/04.gif',
+      caption: ''
     },
 
     // Día en blanco camuflado: parece un vídeo, carga hasta el 99 % y se queda ahí.
