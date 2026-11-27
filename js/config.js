@@ -83,7 +83,7 @@ window.ADV = {
       answer: ['Adan y eva'],
       artist: 'Paulo Londra',
       cover: 'media/img/07.jpg',
-      start: 162,
+      start: 163,
       duration: 2
     },
 
@@ -111,7 +111,7 @@ window.ADV = {
     artist: 'Oasis',
     cover: 'media/img/12.jpg',
     start: 148,
-    duration: 3
+    duration: 1.5
     },
 
     13: {
@@ -170,11 +170,11 @@ window.ADV = {
 
     21: {
       type: 'song',
-      file: 'media/audio/12.mp3',
+      file: 'media/audio/21.mp3',
       title: 'Ne vale la pena',
       answer: ['Ne vale la pena'],
       artist: '22simba',
-      cover: 'media/img/12.jpg',
+      cover: 'media/img/21.jpeg',
       start: 3,
       duration: 1.5
     },
