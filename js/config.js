@@ -51,8 +51,8 @@ window.ADV = {
     3: {
   type: 'photo',
   photos: [
-    'media/img/03-1.jpg',
-    'media/img/03-2.jpg',
+    'media/img/03-1.JPG',
+    'media/img/03-2.JPG',
     'media/img/03-3.jpeg',
     'media/img/03-4.jpeg',
     'media/img/03-5.jpg'
