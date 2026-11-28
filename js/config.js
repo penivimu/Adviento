@@ -49,10 +49,17 @@ window.ADV = {
     },
 
     3: {
-      type: 'photo',
-      file: 'media/img/03.jpg',
-      caption: ''
-    },
+  type: 'photo',
+  photos: [
+    'media/img/03-1.jpg',
+    'media/img/03-2.jpg',
+    'media/img/03-3.jpeg',
+    'media/img/03-4.jpeg',
+    'media/img/03-5.jpg'
+  ],
+  caption: '',
+  stackHint: 'Toca la foto para descubrir la siguiente'
+},
 
     4: {
       type: 'photo',

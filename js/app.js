@@ -466,78 +466,146 @@
   R.voice = (b, d) => player(b, d, 'Escuchar');
 
   R.photo = (b, d) => {
-    const fig = el('figure', 'photo');
-    const trigger = el('button', 'photo-trigger');
-    trigger.type = 'button';
-    trigger.setAttribute('aria-label', 'Ampliar imagen');
+    const files = Array.isArray(d.photos) && d.photos.length
+      ? d.photos
+      : (Array.isArray(d.files) && d.files.length ? d.files : [d.file]);
 
-    const img = new Image();
-    img.alt = d.alt || d.caption || 'Imagen del calendario';
-    img.onload = () => fig.classList.add('in');
-    img.onerror = () => fig.appendChild(el('p', 'dev', 'Falta ' + d.file));
-    img.src = d.file;
-    trigger.appendChild(img);
-    fig.appendChild(trigger);
+    // Una sola foto conserva el visor ampliado y la descarga que ya tenía.
+    if (files.length === 1) {
+      const fig = el('figure', 'photo');
+      const trigger = el('button', 'photo-trigger');
+      trigger.type = 'button';
+      trigger.setAttribute('aria-label', 'Ampliar imagen');
 
-    const lightbox = el('div', 'photo-lightbox');
-    lightbox.setAttribute('role', 'dialog');
-    lightbox.setAttribute('aria-modal', 'true');
-    lightbox.setAttribute('aria-label', 'Imagen ampliada');
+      const img = new Image();
+      img.alt = d.alt || d.caption || 'Imagen del calendario';
+      img.onload = () => fig.classList.add('in');
+      img.onerror = () => fig.appendChild(el('p', 'dev', 'Falta ' + files[0]));
+      img.src = files[0];
+      trigger.appendChild(img);
+      fig.appendChild(trigger);
 
-    const panel = el('div', 'photo-lightbox__panel');
-    const close = el('button', 'photo-lightbox__close', 'Cerrar');
-    close.type = 'button';
-    close.setAttribute('aria-label', 'Cerrar imagen ampliada');
+      const lightbox = el('div', 'photo-lightbox');
+      lightbox.setAttribute('role', 'dialog');
+      lightbox.setAttribute('aria-modal', 'true');
+      lightbox.setAttribute('aria-label', 'Imagen ampliada');
 
-    const largeImg = new Image();
-    largeImg.className = 'photo-lightbox__image';
-    largeImg.alt = img.alt;
+      const panel = el('div', 'photo-lightbox__panel');
+      const close = el('button', 'photo-lightbox__close', 'Cerrar');
+      close.type = 'button';
+      close.setAttribute('aria-label', 'Cerrar imagen ampliada');
 
-    const actions = el('div', 'photo-lightbox__actions');
-    const download = el('a', 'photo-lightbox__download', 'Descargar ' + (/\.gif(?:$|[?#])/i.test(d.file) ? 'GIF' : 'imagen'));
-    download.href = d.file;
-    download.setAttribute('download', (d.file.split('/').pop() || 'imagen').split(/[?#]/)[0]);
+      const largeImg = new Image();
+      largeImg.className = 'photo-lightbox__image';
+      largeImg.alt = img.alt;
 
-    const closeLightbox = () => {
-      lightbox.classList.remove('open');
-      if (activeLightboxClose === closeLightbox) activeLightboxClose = null;
-      document.removeEventListener('keydown', onLightboxKeydown, true);
-      setTimeout(() => lightbox.remove(), 220);
-    };
-    const onLightboxKeydown = (e) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        closeLightbox();
-      }
-    };
+      const actions = el('div', 'photo-lightbox__actions');
+      const download = el('a', 'photo-lightbox__download', 'Descargar ' + (/\.gif(?:$|[?#])/i.test(files[0]) ? 'GIF' : 'imagen'));
+      download.href = files[0];
+      download.setAttribute('download', (files[0].split('/').pop() || 'imagen').split(/[?#]/)[0]);
 
-    close.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e) => {
-      if (e.target === lightbox) closeLightbox();
+      const closeLightbox = () => {
+        lightbox.classList.remove('open');
+        if (activeLightboxClose === closeLightbox) activeLightboxClose = null;
+        document.removeEventListener('keydown', onLightboxKeydown, true);
+        setTimeout(() => lightbox.remove(), 220);
+      };
+      const onLightboxKeydown = (e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          closeLightbox();
+        }
+      };
+
+      close.addEventListener('click', closeLightbox);
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+      document.addEventListener('keydown', onLightboxKeydown, true);
+
+      actions.appendChild(download);
+      panel.append(close, largeImg, actions);
+      lightbox.appendChild(panel);
+
+      trigger.addEventListener('click', () => {
+        largeImg.src = img.currentSrc || img.src;
+        document.body.appendChild(lightbox);
+        requestAnimationFrame(() => lightbox.classList.add('open'));
+        activeLightboxClose = closeLightbox;
+        close.focus();
+      });
+
+      onClose(() => {
+        if (activeLightboxClose === closeLightbox) activeLightboxClose = null;
+        document.removeEventListener('keydown', onLightboxKeydown, true);
+        lightbox.remove();
+      });
+
+      if (d.caption) fig.appendChild(el('figcaption', '', d.caption));
+      fig.appendChild(el('p', 'photo-hint', 'Pulsa la imagen para ampliarla'));
+      b.appendChild(fig);
+      return;
+    }
+
+    // Varias fotos: mazo apilado. Cada toque hace girar la superior y descubre la siguiente.
+    const section = el('section', 'photo-stack');
+    const stage = el('div', 'photo-stack__stage');
+    const deck = el('div', 'photo-stack__deck');
+    const cards = [];
+    let activeIndex = 0;
+    let moving = false;
+
+    files.forEach((file, index) => {
+      const card = el('button', 'photo-stack__card');
+      card.type = 'button';
+      card.setAttribute('aria-label', 'Mostrar foto ' + (index + 1) + ' de ' + files.length);
+      const image = new Image();
+      image.alt = (d.alt || 'Foto') + ' ' + (index + 1);
+      image.loading = index > 1 ? 'lazy' : 'eager';
+      image.onerror = () => {
+        card.classList.add('photo-stack__card--error');
+        card.textContent = 'No se encontró ' + file;
+      };
+      image.src = file;
+      card.appendChild(image);
+      card.addEventListener('click', () => {
+        if (moving || index !== activeIndex) return;
+        moving = true;
+        card.classList.add('is-leaving');
+        window.setTimeout(() => {
+          activeIndex = (activeIndex + 1) % cards.length;
+          cards.forEach((item, i) => {
+            item.classList.remove('is-leaving', 'is-top', 'is-hidden');
+            const depth = (i - activeIndex + cards.length) % cards.length;
+            item.style.setProperty('--stack-depth', Math.min(depth, 4));
+            item.style.zIndex = String(cards.length - depth);
+            if (depth === 0) item.classList.add('is-top');
+            else if (depth > 4) item.classList.add('is-hidden');
+          });
+          counter.textContent = (activeIndex + 1) + ' / ' + files.length;
+          moving = false;
+        }, 520);
+      });
+      cards.push(card);
+      deck.appendChild(card);
     });
-    document.addEventListener('keydown', onLightboxKeydown, true);
 
-    actions.appendChild(download);
-    panel.append(close, largeImg, actions);
-    lightbox.appendChild(panel);
-
-    trigger.addEventListener('click', () => {
-      largeImg.src = img.currentSrc || img.src;
-      document.body.appendChild(lightbox);
-      requestAnimationFrame(() => lightbox.classList.add('open'));
-      activeLightboxClose = closeLightbox;
-      close.focus();
+    cards.forEach((card, i) => {
+      const depth = i;
+      card.style.setProperty('--stack-depth', Math.min(depth, 4));
+      card.style.zIndex = String(cards.length - depth);
+      if (depth === 0) card.classList.add('is-top');
+      else if (depth > 4) card.classList.add('is-hidden');
     });
 
-    onClose(() => {
-      if (activeLightboxClose === closeLightbox) activeLightboxClose = null;
-      document.removeEventListener('keydown', onLightboxKeydown, true);
-      lightbox.remove();
-    });
-
-    if (d.caption) fig.appendChild(el('figcaption', '', d.caption));
-    fig.appendChild(el('p', 'photo-hint', 'Pulsa la imagen para ampliarla'));
-    b.appendChild(fig);
+    const instruction = el('p', 'photo-stack__hint', d.stackHint || 'Toca la foto para descubrir la siguiente');
+    const footer = el('div', 'photo-stack__footer');
+    const counter = el('span', 'photo-stack__counter', '1 / ' + files.length);
+    footer.appendChild(counter);
+    stage.appendChild(deck);
+    section.append(stage, instruction, footer);
+    if (d.caption) section.appendChild(el('p', 'photo-stack__caption', d.caption));
+    b.appendChild(section);
   };
 
   R.video = (b, d) => {

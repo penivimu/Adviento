@@ -517,3 +517,108 @@ main { position: relative; z-index: 1; }
   .song-quiz__shade { padding: 1rem; }
   .song-quiz__controls { gap: .65rem; }
 }
+/* ---------- Día con fotos apiladas ---------- */
+.photo-stack {
+  width: 100%;
+  max-width: 31rem;
+  margin: .25rem auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .8rem;
+}
+.photo-stack__stage {
+  width: min(100%, 25rem);
+  margin: 0 auto;
+  padding: .6rem 1.25rem 1.1rem;
+}
+.photo-stack__deck {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  perspective: 1100px;
+  isolation: isolate;
+}
+.photo-stack__card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: .42rem;
+  overflow: hidden;
+  border: 1px solid rgba(201,162,39,.28);
+  border-radius: 3px;
+  background: #f3eee4;
+  box-shadow: 0 13px 28px rgba(0,0,0,.23), 0 2px 5px rgba(0,0,0,.16);
+  cursor: pointer;
+  transform:
+    translate(calc(var(--stack-depth) * 3px), calc(var(--stack-depth) * 7px))
+    rotate(calc((var(--stack-depth) - 1) * 2.4deg))
+    scale(calc(1 - var(--stack-depth) * .018));
+  transform-origin: 50% 75%;
+  transition:
+    transform .48s cubic-bezier(.2,.72,.2,1),
+    opacity .42s ease,
+    filter .42s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.photo-stack__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.photo-stack__card.is-top {
+  cursor: pointer;
+  transform: rotate(-1.2deg) scale(1);
+}
+.photo-stack__card.is-top:hover {
+  transform: translateY(-3px) rotate(-1.8deg) scale(1.005);
+}
+.photo-stack__card.is-leaving {
+  z-index: 50 !important;
+  opacity: 0;
+  transform: translate(115px,-90px) rotate(19deg) scale(.88);
+  pointer-events: none;
+}
+.photo-stack__card.is-hidden { opacity: 0; pointer-events: none; }
+.photo-stack__card--error {
+  display: grid;
+  place-items: center;
+  color: #655b4c;
+  font-size: .8rem;
+}
+.photo-stack__hint {
+  margin: 0;
+  color: var(--ink);
+  opacity: .72;
+  font-family: var(--serif);
+  font-size: .95rem;
+  font-style: italic;
+  text-align: center;
+}
+.photo-stack__footer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.photo-stack__counter {
+  color: var(--gold);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  font-variant-numeric: tabular-nums;
+}
+.photo-stack__caption {
+  margin: .1rem 0 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .photo-stack__stage { padding: .45rem 1rem .9rem; }
+  .photo-stack__card { padding: .32rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-stack__card { transition-duration: .01ms; }
+}
