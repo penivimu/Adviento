@@ -100,7 +100,16 @@ window.ADV = {
       text: ['TODO: mensaje 1.']
     },
 
-    9: { type: 'pending', nota: 'Minijuego o interactivo a decidir' },
+    9: {
+      type: 'puzzle',
+      file: 'media/img/puzzle.jpg',
+      cols: 6,
+      rows: 4,
+      shuffleMoves: 180,
+      instruction: 'Reconstruye la fotografía',
+      success: '¡Lo has conseguido!',
+      successText: '❤️'
+    },
 
     10: {
       type: 'photo',

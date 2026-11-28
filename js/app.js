@@ -608,6 +608,108 @@
     b.appendChild(section);
   };
 
+
+  R.puzzle = (b, d) => {
+    const rows = Math.max(2, Number(d.rows) || 4);
+    const cols = Math.max(2, Number(d.cols) || 6);
+    const total = rows * cols;
+    const w = el('section', 'tile-puzzle');
+    const board = el('div', 'tile-puzzle__board');
+    board.style.setProperty('--puzzle-cols', cols);
+    board.style.setProperty('--puzzle-rows', rows);
+    board.style.setProperty('--puzzle-image', 'url("' + d.file + '")');
+    board.setAttribute('role', 'group');
+    board.setAttribute('aria-label', 'Puzzle de ' + rows + ' por ' + cols + ' piezas');
+
+    const status = el('p', 'tile-puzzle__status', d.instruction || 'Toca una pieza junto al hueco para moverla');
+    const count = el('p', 'tile-puzzle__count', '0 movimientos');
+    const tiles = Array.from({ length: total }, (_, i) => i);
+    let moves = 0;
+    let finished = false;
+    let lastBlank = -1;
+
+    // Barajar mediante movimientos legales desde el estado resuelto: siempre es resoluble.
+    for (let k = 0; k < Math.max(100, Number(d.shuffleMoves) || 180); k++) {
+      const blank = tiles.indexOf(total - 1);
+      const candidates = [];
+      const r = Math.floor(blank / cols), c = blank % cols;
+      if (r > 0) candidates.push(blank - cols);
+      if (r < rows - 1) candidates.push(blank + cols);
+      if (c > 0) candidates.push(blank - 1);
+      if (c < cols - 1) candidates.push(blank + 1);
+      const filtered = candidates.filter(x => x !== lastBlank);
+      const chosen = filtered[Math.floor(Math.random() * filtered.length)] ?? candidates[0];
+      [tiles[blank], tiles[chosen]] = [tiles[chosen], tiles[blank]];
+      lastBlank = blank;
+    }
+
+    const buttons = [];
+    const draw = () => {
+      const blankAt = tiles.indexOf(total - 1);
+      buttons.forEach((button, pos) => {
+        const piece = tiles[pos];
+        button.classList.toggle('is-empty', piece === total - 1);
+        button.disabled = finished || piece === total - 1 || !isAdjacent(pos, blankAt);
+        if (piece !== total - 1) {
+          const sourceRow = Math.floor(piece / cols);
+          const sourceCol = piece % cols;
+          button.style.setProperty('--piece-x', sourceCol);
+          button.style.setProperty('--piece-y', sourceRow);
+          button.setAttribute('aria-label', 'Pieza ' + (piece + 1));
+          button.textContent = '';
+        } else {
+          button.setAttribute('aria-label', 'Hueco vacío');
+          button.textContent = '';
+        }
+      });
+      count.textContent = moves + (moves === 1 ? ' movimiento' : ' movimientos');
+    };
+
+    const isAdjacent = (a, blank) => {
+      const ar = Math.floor(a / cols), ac = a % cols;
+      const br = Math.floor(blank / cols), bc = blank % cols;
+      return Math.abs(ar - br) + Math.abs(ac - bc) === 1;
+    };
+
+    const solved = () => tiles.every((piece, index) => piece === index);
+    const finish = () => {
+      finished = true;
+      draw();
+      board.classList.add('is-complete');
+      status.textContent = d.success || '¡Lo has conseguido!';
+      const reveal = el('div', 'tile-puzzle__success');
+      reveal.textContent = d.successText || '❤️';
+      w.appendChild(reveal);
+    };
+
+    tiles.forEach((_, pos) => {
+      const button = el('button', 'tile-puzzle__piece');
+      button.type = 'button';
+      button.addEventListener('click', () => {
+        if (finished) return;
+        const blank = tiles.indexOf(total - 1);
+        if (!isAdjacent(pos, blank)) return;
+        [tiles[pos], tiles[blank]] = [tiles[blank], tiles[pos]];
+        moves++;
+        draw();
+        if (solved()) finish();
+      });
+      buttons.push(button);
+      board.appendChild(button);
+    });
+
+    const image = new Image();
+    image.className = 'tile-puzzle__preload';
+    image.alt = '';
+    image.onload = () => board.classList.add('is-ready');
+    image.onerror = () => { status.textContent = 'No se ha podido cargar la imagen: ' + d.file; };
+    image.src = d.file;
+
+    draw();
+    w.append(board, status, count);
+    b.appendChild(w);
+  };
+
   R.video = (b, d) => {
     const w = el('div', 'video');
     const v = document.createElement('video');
